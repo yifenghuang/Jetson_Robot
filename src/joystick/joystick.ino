@@ -2,11 +2,19 @@
 #include <ros.h>
 #include <rosserial_arduino/Adc.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Empty.h>
 
 //#define REMOTE //ROS control arduino mode. huge delay
 //#define CLOSELOOP
 
 ros::NodeHandle nh;
+
+void messageCb( const std_msgs::Empty& toggle_msg)
+{
+  digitalWrite(13, !digitalRead(13));   // blink the led
+}
+
+ros::Subscriber<std_msgs::Empty> sub("toggle_led", &messageCb );
 
 rosserial_arduino::Adc adc_msg;
 std_msgs::String str_msg;
@@ -35,6 +43,9 @@ char ad2[13] = "";
 
 void setup()
 {
+  pinMode(13, OUTPUT);
+  nh.initNode();
+  nh.subscribe(sub);
 #ifdef REMOTE  
    pinMode(13, OUTPUT);
    nh.initNode();
@@ -44,7 +55,7 @@ void setup()
    while(Serial.read()>= 0){}//clear serialbuffer  
 #endif
 
-   Serial.println("cfg ratio=5"); //电机响应速度
+   Serial.println("cfg ratio=1"); //电机响应速度
 
 }
  
@@ -69,16 +80,13 @@ void loop()
      nh.spinOnce();
      delay(5);
 #else
-     //Throttle = (analogRead(0)-505)/100.0;
-     //Steering = (analogRead(1)-505)/150.0;
-     Throttle = 2*(analogRead(0)-505);
-     Steering = 2*(analogRead(1)-505);
+     Throttle = 10*(analogRead(0)-506);
+     Steering = 5*(analogRead(1)-521);
      dtostrf(Throttle-Steering,1,2,ad1);
      dtostrf(Throttle+Steering,1,2,ad2);
+     
      Serial.println(lefthead+ad1);
-     //Serial.println(analogRead(0));
      Serial.println(righthead+ad2);
-     //Serial.println(Serial.read());   
      delay(5);
 #endif
 }

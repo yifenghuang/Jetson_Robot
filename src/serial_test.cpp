@@ -11,7 +11,7 @@
 using namespace std;
 using namespace boost::asio;           //定义一个命名空间，用于后面的读写操作
 
-unsigned char buf[24];   
+unsigned char buf[24];
 int speed = 0;                
 string ad1;
 string tou="mov pleft=";
@@ -33,8 +33,6 @@ int main(int argc, char** argv)
     ros::NodeHandle n;
     ros::Subscriber sub = n.subscribe("chatter", 1000, chatterCallback);
 
-
-             
     sp.set_option(serial_port::baud_rate(115200));   
     sp.set_option(serial_port::flow_control());
     sp.set_option(serial_port::parity());
