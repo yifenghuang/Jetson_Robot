@@ -3,15 +3,20 @@
 #include <rosserial_arduino/Adc.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Empty.h>
-
 //#define REMOTE //ROS control arduino mode. huge delay
 //#define CLOSELOOP
 
 ros::NodeHandle nh;
+bool start = false;
 
 void messageCb( const std_msgs::Empty& toggle_msg)
 {
   digitalWrite(13, !digitalRead(13));   // blink the led
+  start = !start;
+  Serial.begin(115200);
+  while(Serial.read()>= 0){}//clear serialbuffer  
+  Serial.println("cfg ratio=1"); //电机响应速度
+
 }
 
 ros::Subscriber<std_msgs::Empty> sub("toggle_led", &messageCb );
@@ -51,11 +56,11 @@ void setup()
    nh.initNode();
    nh.advertise(chatter);
 #else   
-   Serial.begin(115200);
-   while(Serial.read()>= 0){}//clear serialbuffer  
+   //Serial.begin(115200);
+   //while(Serial.read()>= 0){}//clear serialbuffer  
 #endif
 
-   Serial.println("cfg ratio=1"); //电机响应速度
+   //Serial.println("cfg ratio=1"); //电机响应速度
 
 }
  
@@ -85,8 +90,12 @@ void loop()
      dtostrf(Throttle-Steering,1,2,ad1);
      dtostrf(Throttle+Steering,1,2,ad2);
      
-     Serial.println(lefthead+ad1);
-     Serial.println(righthead+ad2);
+     if(start)
+     {
+       Serial.println(lefthead+ad1);
+       Serial.println(righthead+ad2);
+     }
+     nh.spinOnce();
      delay(5);
 #endif
 }
