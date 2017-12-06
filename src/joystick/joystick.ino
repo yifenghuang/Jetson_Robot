@@ -9,17 +9,28 @@
 ros::NodeHandle nh;
 bool start = false;
 
-void messageCb( const std_msgs::Empty& toggle_msg)
+void startmsgcb( const std_msgs::Empty& toggle_msg)
 {
-  digitalWrite(13, !digitalRead(13));   // blink the led
+  //digitalWrite(13, !digitalRead(13));   // blink the led
   start = !start;
-  Serial.begin(115200);
-  while(Serial.read()>= 0){}//clear serialbuffer  
-  Serial.println("cfg ratio=1"); //电机响应速度
-
+  Serial2.begin(115200);
+  while(Serial2.read()>= 0){}//clear serialbuffer  
+  Serial2.println("cfg ratio=1"); //电机响应速度
 }
 
-ros::Subscriber<std_msgs::Empty> sub("toggle_led", &messageCb );
+void obstaclemsgcb( const std_msgs::Empty& toggle_msg)
+{
+  digitalWrite(13, HIGH);   
+}
+
+void okmsgcb( const std_msgs::Empty& toggle_msg)
+{
+  digitalWrite(13, LOW);   
+}
+
+ros::Subscriber<std_msgs::Empty> sub("start", &startmsgcb );
+ros::Subscriber<std_msgs::Empty> sub2("obstacle", &obstaclemsgcb );
+ros::Subscriber<std_msgs::Empty> sub3("ok", &okmsgcb );
 
 rosserial_arduino::Adc adc_msg;
 std_msgs::String str_msg;
@@ -51,6 +62,8 @@ void setup()
   pinMode(13, OUTPUT);
   nh.initNode();
   nh.subscribe(sub);
+  nh.subscribe(sub2);
+  nh.subscribe(sub3);
 #ifdef REMOTE  
    pinMode(13, OUTPUT);
    nh.initNode();
@@ -92,8 +105,8 @@ void loop()
      
      if(start)
      {
-       Serial.println(lefthead+ad1);
-       Serial.println(righthead+ad2);
+       Serial2.println(lefthead+ad1);
+       Serial2.println(righthead+ad2);
      }
      nh.spinOnce();
      delay(5);

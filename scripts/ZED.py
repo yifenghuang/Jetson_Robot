@@ -2,6 +2,7 @@
 
 import rospy
 from std_msgs.msg import String
+from std_msgs.msg import Empty
 import numpy as np
 import cv2
 from sensor_msgs.msg import Image
@@ -28,6 +29,12 @@ def image_callback(msg):
 	hello_str = "the distance is smaller than 1m"
         #rospy.loginfo(hello_str)
         pub.publish(hello_str)
+	pub_obstacle.publish()
+    else:
+        hello_str = "ok"
+        #rospy.loginfo(hello_str)
+        pub.publish(hello_str)
+        pub_ok.publish()
     cv2.line(cv2_img,(639,359),(640,360),0,5)
     cv2.imshow("raw",0.1*cv2_img)
     cv2.waitKey(1)
@@ -35,4 +42,6 @@ def image_callback(msg):
 if __name__ == '__main__':
     bridge = CvBridge()
     pub = rospy.Publisher('chatter', String, queue_size=10)
+    pub_obstacle = rospy.Publisher('obstacle', Empty, queue_size=10)
+    pub_ok = rospy.Publisher('ok', Empty, queue_size=10)
     listener()
