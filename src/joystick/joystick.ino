@@ -8,6 +8,8 @@
 
 ros::NodeHandle nh;
 bool start = false;
+bool stopit = false; //check the obstacle
+bool alreadybreak = false;
 
 void startmsgcb( const std_msgs::Empty& toggle_msg)
 {
@@ -20,12 +22,15 @@ void startmsgcb( const std_msgs::Empty& toggle_msg)
 
 void obstaclemsgcb( const std_msgs::Empty& toggle_msg)
 {
-  digitalWrite(13, HIGH);   
+  digitalWrite(13, HIGH);  
+  stopit = true; 
 }
 
 void okmsgcb( const std_msgs::Empty& toggle_msg)
 {
-  digitalWrite(13, LOW);   
+  digitalWrite(13, LOW);
+  stopit = false;  
+  alreadybreak = false;
 }
 
 ros::Subscriber<std_msgs::Empty> sub("start", &startmsgcb );
@@ -56,6 +61,7 @@ int averageAnalog(int pin){
 
 char ad1[13] = "";
 char ad2[13] = "";
+int BREAK=0;
 
 void setup()
 {
@@ -98,8 +104,24 @@ void loop()
      nh.spinOnce();
      delay(5);
 #else
+     
+     
      Throttle = 10*(analogRead(0)-506);
      Steering = 5*(analogRead(1)-521);
+     
+     if(stopit & Throttle > 0 & BREAK==0)
+     {
+       Throttle = 0;
+       if(!alreadybreak) BREAK = 100;
+     }
+     
+     if(BREAK)
+     {
+       BREAK--;
+       Throttle = -80;
+       alreadybreak = true;
+     }
+     
      dtostrf(Throttle-Steering,1,2,ad1);
      dtostrf(Throttle+Steering,1,2,ad2);
      

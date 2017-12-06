@@ -24,8 +24,8 @@ def listener():
 def image_callback(msg):
     #print("Received an image!")
     cv2_img = bridge.imgmsg_to_cv2(msg, "32FC1")
-    print(cv2_img[360,640])#1280x720
-    if cv2_img[360,640] < 1.0 and cv2_img[360,640] > 0.01:
+    print(cv2_img[360,760])#1280x720
+    if cv2_img[360,760] < 1.4 and cv2_img[360,760] > 0.01:
 	hello_str = "the distance is smaller than 1m"
         #rospy.loginfo(hello_str)
         pub.publish(hello_str)
@@ -35,7 +35,7 @@ def image_callback(msg):
         #rospy.loginfo(hello_str)
         pub.publish(hello_str)
         pub_ok.publish()
-    cv2.line(cv2_img,(639,359),(640,360),0,5)
+    cv2.line(cv2_img,(759,359),(760,360),0,5)
     cv2.imshow("raw",0.1*cv2_img)
     cv2.waitKey(1)
 
