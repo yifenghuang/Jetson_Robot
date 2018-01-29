@@ -81,6 +81,9 @@ void setup()
 
    //Serial.println("cfg ratio=1"); //电机响应速度
 
+  Serial2.begin(115200);
+  while(Serial2.read()>= 0){}//clear serialbuffer  
+  Serial2.println("cfg ratio=1");
 }
  
 
@@ -125,6 +128,7 @@ void loop()
      dtostrf(Throttle-Steering,1,2,ad1);
      dtostrf(Throttle+Steering,1,2,ad2);
      
+     start = true;
      if(start)
      {
        Serial2.println(lefthead+ad1);
