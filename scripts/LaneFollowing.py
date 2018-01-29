@@ -8,13 +8,43 @@ import cv2
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
+def region_of_interest(img, vertices):
+    """
+    Applies an image mask.
+    
+    Only keeps the region of the image defined by the polygon
+    formed from `vertices`. The rest of the image is set to black.
+    """
+    #defining a blank mask to start with
+    mask = np.zeros_like(img)   
+    
+    #defining a 3 channel or 1 channel color to fill the mask with depending on the input image
+    if len(img.shape) > 2:
+        channel_count = img.shape[2]  # i.e. 3 or 4 depending on your image
+        ignore_mask_color = (255,) * channel_count
+    else:
+        ignore_mask_color = 255
+        
+    #filling pixels inside the polygon defined by "vertices" with the fill color    
+    cv2.fillPoly(mask, vertices, ignore_mask_color)
+    
+    #returning the image only where mask pixels are nonzero
+    masked_image = cv2.bitwise_and(img, mask)
+    return masked_image
+
+def draw_lines_raw(img, lines, color=[255,0,0], thickness=2):
+    for line in lines:
+        for x1,y1,x2,y2 in line:
+	    if ((y2-y1)/(x2-x1))>0 and ((y2-y1)/(x2-x1))<5:
+                    cv2.line(img, (int(x1), int(y1)), (int(x2), int(y2)), color, thickness)
+
 def callback(data):
     rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.data)
 
 def listener():
     rospy.init_node('ZED')
     
-    image_topic = "/zed/depth/depth_registered"
+    image_topic = "/zed/left/image_raw_color"
     rospy.Subscriber(image_topic, Image, image_callback)
     rate = rospy.Rate(10) # 10hz
     #rospy.spin()
@@ -23,20 +53,52 @@ def listener():
 
 def image_callback(msg):
     #print("Received an image!")
-    cv2_img = bridge.imgmsg_to_cv2(msg, "32FC1")
-    #print(cv2_img[360,760])#1280x720
-    #if cv2_img[360,760] < 1.4 and cv2_img[360,760] > 0.01:
-	#hello_str = "the distance is smaller than 1m"
-        #rospy.loginfo(hello_str)
-       # pub.publish(hello_str)
-	#pub_obstacle.publish()
-   # else:
-     #   hello_str = "ok"
-        #rospy.loginfo(hello_str)
-     #   pub.publish(hello_str)
-     #   pub_ok.publish()
-  #  cv2.line(cv2_img,(759,359),(760,360),0,5)
-    cv2.imshow("raw",0.1*cv2_img)
+    cv2_img = cv2.GaussianBlur(cv2.cvtColor(bridge.imgmsg_to_cv2(msg, "rgb8"), cv2.COLOR_BGR2RGB), (5, 5), 0) 
+    
+    B = cv2_img[:,:,2]
+    G = cv2_img[:,:,1] 
+    R = cv2_img[:,:,0]
+
+    thresh = (0, 45)
+    RGBtb = np.zeros_like(B)
+    RGBtb[(B > thresh[0]) & (B <= thresh[1])] = 1
+
+    thresh = (0, 45)
+    RGBtg = np.zeros_like(B)
+    RGBtg[(G > thresh[0]) & (G <= thresh[1])] = 1
+
+    thresh = (0, 45)
+    RGBtr = np.zeros_like(B)
+    RGBtr[(R > thresh[0]) & (R <= thresh[1])] = 1
+
+    
+    new_img = np.zeros_like(cv2_img)
+    new_img[:,:,2] = RGBtb
+    new_img[:,:,1] = RGBtg
+    new_img[:,:,0] = RGBtr
+    out_img = cv2.cvtColor(new_img, cv2.COLOR_RGB2GRAY)
+
+    edges = cv2.Canny(out_img, 90,110)
+   # cv2.imshow("raw",edges)
+    imshape = edges.shape
+
+    vertices = np.array([[(0,imshape[0]),(228, 49), (511,49), (imshape[1],imshape[0])]], dtype=np.int32)
+    masked_edges = region_of_interest(out_img, vertices)
+
+
+    midpoint = np.int(masked_edges.shape[1]/2)
+    point_row = 188 # set which row you want to find the point
+    margin = 30 # set the window size of the windows +/- margin
+    minpix = 15 # set the minimun number of pixels found to recenter window
+
+    for window in range(masked_edges.shape[1]-margin):        
+        if np.sum(masked_edges[point_row][window:(window+margin)]) > minpix:
+            black = window
+            break
+
+    print(black)
+    cv2.imshow("raw",255*masked_edges)
+
     cv2.waitKey(1)
 
 if __name__ == '__main__':
