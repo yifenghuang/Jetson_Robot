@@ -91,6 +91,7 @@ def image_callback(msg):
     margin = 30 # set the window size of the windows +/- margin
     minpix = 15 # set the minimun number of pixels found to recenter window
 
+    black = midpoint
     for window in range(masked_edges.shape[1]-margin):        
         if np.sum(masked_edges[point_row][window:(window+margin)]) > minpix:
             black = window
